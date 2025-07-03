@@ -1,17 +1,52 @@
-version: '3.3'
 services:
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
-  frontend:
-    container_name: foodgram-front
-    build: ../frontend
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    command: >
+      sh -c '
+        python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        python manage.py load_ingredients &&
+        python manage.py runserver 0.0.0.0:8000
+      '
     volumes:
-      - ../frontend/:/app/result_build/
-  nginx:
-    container_name: foodgram-proxy
-    image: nginx:1.25.4-alpine
+      - ../backend:/app
+      - ../backend/data:/app/data
+      - static_volume:/app/static
+      - media_volume:/app/media
     ports:
-      - "80:80"
+      - '8000:8000'
+    depends_on:
+      - db
+    env_file:
+      - ../infra/.env
+
+  nginx:
+    image: nginx:1.21
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ../frontend/build:/usr/share/nginx/html/
-      - ../docs/:/usr/share/nginx/html/api/docs/
+      - ../infra/nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/app/static
+      - media_volume:/app/media
+      - ../frontend/build:/app/frontend
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    ports:
+      - '80:80'
+      - '443:443'
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
