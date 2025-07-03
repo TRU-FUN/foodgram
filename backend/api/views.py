@@ -125,7 +125,13 @@ class RecipeViewSet(RelationHandlerMixin, viewsets.ModelViewSet):
             request, pk, ShoppingCart, 'список покупок'
         )
 
-    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    @action(
+        detail=True,
+        methods=['get'],
+        permission_classes=[AllowAny],
+        url_path='get-link',
+        url_name='get-link'
+    )
     def get_link(self, request, pk=None):
         recipe = self.get_object()
         full_link = request.build_absolute_uri(f'/recipes/{recipe.id}/')
