@@ -33,7 +33,7 @@ jobs:
 
       - name: Установка зависимостей и сборка фронтенда
         run: |
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
           CI=false npm run build
         working-directory: frontend
 
