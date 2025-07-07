@@ -6,7 +6,6 @@ from .views import (
     TagViewSet,
     RecipeViewSet,
     DownloadShoppingCart,
-    UserAvatarView,
     UserViewSet,
     SubscriptionListView,
 )
@@ -27,11 +26,6 @@ urlpatterns = [
         'users/<int:pk>/subscribe/',
         UserViewSet.as_view({'post': 'subscribe', 'delete': 'subscribe'}),
         name='subscribe',
-    ),
-    path(
-        'users/me/avatar/',
-        UserAvatarView.as_view(),
-        name='user-avatar'
     ),
     path(
         'users/subscriptions/',

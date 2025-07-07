@@ -1,6 +1,7 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from .models import User, Subscription
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from .models import Subscription, User
 
 
 class FollowingInline(admin.TabularInline):
@@ -20,8 +21,11 @@ class FollowersInline(admin.TabularInline):
 
 
 @admin.register(User)
-class CustomUserAdmin(UserAdmin):
-    list_display = ('id', 'email', 'first_name', 'last_name', 'is_active')
+class UserAdmin(BaseUserAdmin):
+    list_display = (
+        'id', 'email', 'first_name', 'last_name',
+        'is_active', 'recipes_count', 'subscribers_count'
+    )
     list_filter = ('is_active', 'is_staff', 'is_superuser')
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
@@ -31,7 +35,9 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Личная информация', {
-            'fields': ('first_name', 'last_name', 'avatar')
+            'fields': (
+                'first_name', 'last_name', 'avatar'
+            )
         }),
         ('Права доступа', {
             'fields': (
@@ -52,6 +58,14 @@ class CustomUserAdmin(UserAdmin):
             ),
         }),
     )
+
+    def recipes_count(self, obj):
+        return obj.recipes.count()
+    recipes_count.short_description = 'Рецептов'
+
+    def subscribers_count(self, obj):
+        return obj.subscribers.count()
+    subscribers_count.short_description = 'Подписчиков'
 
 
 @admin.register(Subscription)

@@ -7,29 +7,36 @@ class RelationHandlerMixin:
     Миксин для обработки добавления и удаления объектов отношений
     (например, избранное или список покупок).
     """
-    def handle_relation(self, request, pk, model, relation_name):
+    def handle_relation(
+        self, request, model, relation_name, serializer_class
+    ):
         recipe = self.get_object()
-        relation = model.objects.filter(user=request.user, recipe=recipe)
+        relation_qs = model.objects.filter(user=request.user, recipe=recipe)
 
         if request.method == 'POST':
-            if relation.exists():
+            if relation_qs.exists():
                 return Response(
                     {'error': f'Уже добавлено в {relation_name}'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            model.objects.create(user=request.user, recipe=recipe)
+            data = {'user': request.user.id, 'recipe': recipe.id}
+            serializer = serializer_class(
+                data=data,
+                context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(
                 {'success': f'Добавлено в {relation_name}'},
                 status=status.HTTP_201_CREATED
             )
 
-        if relation.exists():
-            relation.delete()
+        deleted_count, _ = relation_qs.delete()
+        if deleted_count:
             return Response(
                 {'success': f'Удалено из {relation_name}'},
                 status=status.HTTP_204_NO_CONTENT
             )
-
         return Response(
             {'error': f'Не найдено в {relation_name}'},
             status=status.HTTP_400_BAD_REQUEST

@@ -39,15 +39,24 @@ def generate_shopping_cart_pdf(ingredients_by_recipe, combined_ingredients):
     '''
 
     for recipe, items in ingredients_by_recipe.items():
-        html += f'<h2>{recipe}</h2><ul>'
+        if hasattr(recipe, 'name'):
+            recipe_name = recipe.name
+        else:
+            recipe_name = str(recipe)
+        html += f'<h2>{recipe_name}</h2><ul>'
         for ingredient in items:
             html += f'<li>{ingredient}</li>'
         html += '</ul>'
 
-    html += '<h2>Общие ингредиенты:</h2><ul>'
-    for name, data in sorted(combined_ingredients.items()):
-        html += f'<li>{name} ({data["unit"]}) - {data["amount"]}</li>'
-    html += '</ul></body></html>'
+    if combined_ingredients:
+        html += '<h2>Общие ингредиенты:</h2><ul>'
+        for name, data in sorted(combined_ingredients.items()):
+            unit = data.get('unit', '')
+            amount = data.get('amount', '')
+            html += f'<li>{name} ({unit}) - {amount}</li>'
+        html += '</ul>'
+
+    html += '</body></html>'
 
     pdf_buffer = BytesIO()
     pisa_status = pisa.CreatePDF(html, dest=pdf_buffer)
