@@ -276,6 +276,27 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    @action(
+        detail=False,
+        methods=['put'],
+        permission_classes=(IsAuthenticated,),
+        parser_classes=(MultiPartParser,),
+        url_path='me/avatar',
+        url_name='me-avatar'
+    )
+    def avatar(self, request):
+        avatar_file = request.data.get('avatar')
+        if not avatar_file:
+            return Response(
+                {'error': 'Файл для аватара не передан.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user = request.user
+        user.avatar = avatar_file
+        user.save()
+        avatar_url = request.build_absolute_uri(user.avatar.url)
+        return Response({'avatar': avatar_url}, status=status.HTTP_200_OK)
+
 
 class SubscriptionListView(ListAPIView):
     """
