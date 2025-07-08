@@ -1,7 +1,7 @@
 import base64
+
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -16,19 +16,24 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from recipes.models import (
-    Favorite, Ingredient, Recipe, RecipeIngredient,
-    ShoppingCart, Tag, User
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    Tag,
+    User
 )
 from users.models import Subscription
 from api.serializers import (
+    FavoriteSerializer,
     IngredientSerializer,
+    PasswordChangeSerializer,
     RecipeCreateUpdateSerializer,
     RecipeSerializer,
-    TagSerializer,
-    FavoriteSerializer,
     ShoppingCartSerializer,
-    PasswordChangeSerializer,
     SubscriptionListSerializer,
+    TagSerializer,
     UserCreateSerializer,
     UserSerializer
 )
