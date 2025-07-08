@@ -1,3 +1,7 @@
+import base64
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -278,24 +282,62 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        methods=['put'],
+        methods=('put',),
         permission_classes=(IsAuthenticated,),
-        parser_classes=(MultiPartParser,),
+        parser_classes=(MultiPartParser, FormParser, JSONParser),
         url_path='me/avatar',
         url_name='me-avatar'
     )
     def avatar(self, request):
-        avatar_file = request.data.get('avatar')
-        if not avatar_file:
-            return Response(
-                {'error': 'Файл для аватара не передан.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        """Загрузка или обновление аватара (файл или base64)."""
         user = request.user
-        user.avatar = avatar_file
+        avatar = request.FILES.get('avatar')
+        if not avatar and 'avatar' in request.data:
+            try:
+                fmt, imgstr = request.data['avatar'].split(';base64,')
+                ext = fmt.split('/')[-1]
+                avatar = ContentFile(
+                    base64.b64decode(imgstr), name=f'avatar.{ext}'
+                )
+            except Exception:
+                return Response(
+                    {'error': 'Некорректный формат изображения'},
+                    status=400
+                )
+        if not avatar:
+            return Response({'error': 'Файл не найден'}, status=400)
+        if user.avatar:
+            old_path = user.avatar.name
+            if default_storage.exists(old_path):
+                default_storage.delete(old_path)
+        user.avatar = avatar
         user.save()
         avatar_url = request.build_absolute_uri(user.avatar.url)
-        return Response({'avatar': avatar_url}, status=status.HTTP_200_OK)
+        return Response(
+            {'message': 'Аватар обновлён', 'avatar_url': avatar_url},
+            status=200
+        )
+
+    @action(
+        detail=False,
+        methods=('delete',),
+        permission_classes=(IsAuthenticated,),
+        url_path='me/avatar',
+        url_name='me-avatar'
+    )
+    def delete_avatar(self, request):
+        """Удаление текущего аватара пользователя."""
+        user = request.user
+        if not user.avatar:
+            return Response({'error': 'Аватар отсутствует'}, status=400)
+        old_path = user.avatar.name
+        user.avatar.delete(save=True)
+        if default_storage.exists(old_path):
+            default_storage.delete(old_path)
+        return Response(
+            {'message': 'Аватар удалён'},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class SubscriptionListView(ListAPIView):
