@@ -3,6 +3,13 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 
+from api.constants import (
+    INGREDIENT_NAME_MAX_LENGTH,
+    MEASUREMENT_UNIT_MAX_LENGTH,
+    TAG_NAME_MAX_LENGTH,
+    RECIPE_NAME_MAX_LENGTH
+)
+
 User = get_user_model()
 
 
@@ -22,11 +29,11 @@ class Ingredient(TimeStampedModel):
     Ингредиент для рецептов.
     """
     name = models.CharField(
-        'Название', max_length=255, unique=True,
+        'Название', max_length=INGREDIENT_NAME_MAX_LENGTH, unique=True,
         help_text='Уникальное имя ингредиента'
     )
     measurement_unit = models.CharField(
-        'Ед. измерения', max_length=50,
+        'Ед. измерения', max_length=MEASUREMENT_UNIT_MAX_LENGTH,
         help_text='Например, г, шт., мл'
     )
 
@@ -45,7 +52,7 @@ class Tag(TimeStampedModel):
     Тег для рецептов.
     """
     name = models.CharField(
-        'Название', max_length=100, unique=True,
+        'Название', max_length=TAG_NAME_MAX_LENGTH, unique=True,
         help_text='Уникальное имя тега'
     )
     slug = models.SlugField(
@@ -71,7 +78,8 @@ class Recipe(TimeStampedModel):
         related_name='recipes', verbose_name='Автор'
     )
     name = models.CharField(
-        'Название', max_length=255, help_text='Уникальное имя рецепта'
+        'Название', max_length=RECIPE_NAME_MAX_LENGTH,
+        help_text='Уникальное имя рецепта'
     )
     image = models.ImageField(
         'Изображение', upload_to='recipes/', blank=True, null=True
@@ -139,16 +147,28 @@ class RecipeIngredient(models.Model):
         return f'{self.ingredient.name}: {self.amount}'
 
 
-class Favorite(models.Model):
-    """
-    Избранные рецепты пользователя.
-    """
+class UserRecipeRelation(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, verbose_name='Пользователь'
+    )
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, verbose_name='Рецепт'
+    )
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f'{self.user.email} -> {self.recipe.name}'
+
+
+class Favorite(UserRecipeRelation):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
         related_name='favorites', verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE,
+        'Recipe', on_delete=models.CASCADE,
         related_name='favorited_by', verbose_name='Рецепт'
     )
 
@@ -166,16 +186,13 @@ class Favorite(models.Model):
         return f'{self.user.email} -> {self.recipe.name}'
 
 
-class ShoppingCart(models.Model):
-    """
-    Элементы списка покупок пользователя.
-    """
+class ShoppingCart(UserRecipeRelation):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
         related_name='cart_items', verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE,
+        'Recipe', on_delete=models.CASCADE,
         related_name='in_carts', verbose_name='Рецепт'
     )
 

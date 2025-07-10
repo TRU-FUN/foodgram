@@ -59,13 +59,13 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
 
+    @admin.display(description='Рецептов')
     def recipes_count(self, obj):
         return obj.recipes.count()
-    recipes_count.short_description = 'Рецептов'
 
+    @admin.display(description='Подписчиков')
     def subscribers_count(self, obj):
         return obj.subscribers.count()
-    subscribers_count.short_description = 'Подписчиков'
 
 
 @admin.register(Subscription)

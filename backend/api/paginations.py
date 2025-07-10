@@ -1,7 +1,6 @@
 from rest_framework.pagination import PageNumberPagination
 
-DEFAULT_PAGE_SIZE = 6
-MAX_PAGE_SIZE = 100
+from .constants import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 
 
 class SubscriptionPagination(PageNumberPagination):
